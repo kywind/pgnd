@@ -16,7 +16,7 @@
 <span class="author-block"><sup>1</sup>Columbia University,</span>
 <span class="author-block"><sup>2</sup>University of Illinois Urbana-Champaign</span>
 
-[Website](https://kywind.github.io/pgnd/) |
+[Website](https://kywind.github.io/pgnd) |
 [Paper](https://www.roboticsproceedings.org/rss21/p036.pdf)
 
 <img src="imgs/teaser.png" width="100%"/>
