@@ -291,6 +291,7 @@ class Trainer:
                     colliders.update_grippers(actions[:, step])
 
                 x_in = x.clone()
+                v_in = v.clone()
                 if step == 0:
                     x_in_gt = x.clone()
                     v_in_gt = v.clone()
@@ -337,13 +338,13 @@ class Trainer:
 
                 if cfg.sim.n_history > 0:
                     if cfg.sim.gripper_points:
-                        x_his_particles = torch.cat([x_his[:, :num_particles_orig].reshape(batch_size, num_particles_orig, -1, 3)[:, :, 1:], x[:, :num_particles_orig, None].detach()], dim=2)
-                        v_his_particles = torch.cat([v_his[:, :num_particles_orig].reshape(batch_size, num_particles_orig, -1, 3)[:, :, 1:], v[:, :num_particles_orig, None].detach()], dim=2)
+                        x_his_particles = torch.cat([x_his[:, :num_particles_orig].reshape(batch_size, num_particles_orig, -1, 3)[:, :, 1:], x_in[:, :num_particles_orig, None].detach()], dim=2)
+                        v_his_particles = torch.cat([v_his[:, :num_particles_orig].reshape(batch_size, num_particles_orig, -1, 3)[:, :, 1:], v_in[:, :num_particles_orig, None].detach()], dim=2)
                         x_his = x_his_particles.reshape(batch_size, num_particles_orig, -1)
                         v_his = v_his_particles.reshape(batch_size, num_particles_orig, -1)
                     else:
-                        x_his = torch.cat([x_his.reshape(batch_size, num_particles, -1, 3)[:, :, 1:], x[:, :, None].detach()], dim=2)
-                        v_his = torch.cat([v_his.reshape(batch_size, num_particles, -1, 3)[:, :, 1:], v[:, :, None].detach()], dim=2)
+                        x_his = torch.cat([x_his.reshape(batch_size, num_particles, -1, 3)[:, :, 1:], x_in[:, :, None].detach()], dim=2)
+                        v_his = torch.cat([v_his.reshape(batch_size, num_particles, -1, 3)[:, :, 1:], v_in[:, :, None].detach()], dim=2)
                         x_his = x_his.reshape(batch_size, num_particles, -1)
                         v_his = v_his.reshape(batch_size, num_particles, -1)
                     
@@ -558,10 +559,8 @@ class Trainer:
             for step in trange(num_steps_total):
                 if num_grippers > 0:
                     colliders.update_grippers(actions[:, step])
-                if cfg.sim.gripper_forcing:
-                    x_in = x.clone()
-                else:
-                    x_in = None
+                x_in = x.clone()
+                v_in = v.clone()
 
                 if cfg.sim.gripper_points:
                     x = torch.cat([x, gripper_x[:, step]], dim=1)  # gripper_points: (bsz, num_steps, num_particles, 3)
@@ -611,13 +610,13 @@ class Trainer:
                 
                 if cfg.sim.n_history > 0:
                     if cfg.sim.gripper_points:
-                        x_his_particles = torch.cat([x_his[:, :num_particles_orig].reshape(batch_size, num_particles_orig, -1, 3)[:, :, 1:], x[:, :num_particles_orig, None].detach()], dim=2)
-                        v_his_particles = torch.cat([v_his[:, :num_particles_orig].reshape(batch_size, num_particles_orig, -1, 3)[:, :, 1:], v[:, :num_particles_orig, None].detach()], dim=2)
+                        x_his_particles = torch.cat([x_his[:, :num_particles_orig].reshape(batch_size, num_particles_orig, -1, 3)[:, :, 1:], x_in[:, :num_particles_orig, None].detach()], dim=2)
+                        v_his_particles = torch.cat([v_his[:, :num_particles_orig].reshape(batch_size, num_particles_orig, -1, 3)[:, :, 1:], v_in[:, :num_particles_orig, None].detach()], dim=2)
                         x_his = x_his_particles.reshape(batch_size, num_particles_orig, -1)
                         v_his = v_his_particles.reshape(batch_size, num_particles_orig, -1)
                     else:
-                        x_his = torch.cat([x_his.reshape(batch_size, num_particles, -1, 3)[:, :, 1:], x[:, :, None].detach()], dim=2)
-                        v_his = torch.cat([v_his.reshape(batch_size, num_particles, -1, 3)[:, :, 1:], v[:, :, None].detach()], dim=2)
+                        x_his = torch.cat([x_his.reshape(batch_size, num_particles, -1, 3)[:, :, 1:], x_in[:, :, None].detach()], dim=2)
+                        v_his = torch.cat([v_his.reshape(batch_size, num_particles, -1, 3)[:, :, 1:], v_in[:, :, None].detach()], dim=2)
                         x_his = x_his.reshape(batch_size, num_particles, -1)
                         v_his = v_his.reshape(batch_size, num_particles, -1)
 
