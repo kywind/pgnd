@@ -249,6 +249,15 @@ class RealTeleopBatchDataset(Dataset):
                         episodes_clean.append(episode_id)
                     traj = list(sorted(dataset_root_episode.glob('*.pt')))[::self.load_skip_frame]
 
+                min_frames = (self.num_steps + self.n_history) * self.skip_frame + 1
+                if self.is_train and len(traj) < min_frames:
+                    print(f'WARNING: skipping episode {episode_name}: {len(traj)} loaded frames '
+                          f'< {min_frames} required (num_steps={self.num_steps}, '
+                          f'n_history={self.n_history}, skip_frame={self.skip_frame})')
+                    if episodes_clean and episodes_clean[-1] == episode_id:
+                        episodes_clean.pop()
+                    continue
+
                 states = [torch.load(p, map_location='cpu') for p in traj]
 
                 xs = torch.stack([state['x'] for state in states], dim=0)
