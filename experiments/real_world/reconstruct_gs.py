@@ -1,6 +1,7 @@
 from pathlib import Path
 import argparse
 import os
+import random
 import numpy as np
 import glob
 import cv2
@@ -113,6 +114,11 @@ class GSProcessor:
                 if os.path.exists(os.path.join(episode_data_dir / 'gs' / f'{frame_id:06d}.splat')):
                     print(f'[get_gaussian] already processed, skipping')
                     continue
+
+                seed = episode_id * 1_000_000 + frame_id
+                random.seed(seed)
+                np.random.seed(seed)
+                torch.manual_seed(seed)
 
                 pcd_npz = np.load(episode_data_dir / "pcd_clean" / f"{frame_id:06d}.npz")
 

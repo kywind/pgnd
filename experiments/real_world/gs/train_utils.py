@@ -169,6 +169,6 @@ def report_progress(params, data, i, progress_bar, num_pts, every_i=100, vis_dir
 
 def get_batch(todo_dataset, dataset):
     if not todo_dataset:
-        todo_dataset = dataset.copy()
+        todo_dataset.extend(dataset)
     curr_data = todo_dataset.pop(random.randint(0, len(todo_dataset) - 1))
     return curr_data
