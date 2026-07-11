@@ -617,7 +617,6 @@ class Trainer:
                     extra_save = {
                         'gripper_x': gripper_x[0, step],
                         'gripper_v': gripper_v[0, step],
-                        'grippers': actions[0, step],
                     }
                     x = x[:, :num_particles_orig]
                     v = v[:, :num_particles_orig]
@@ -625,14 +624,14 @@ class Trainer:
                 else:
                     extra_save = {}
 
-                colliders_save = colliders.export()
-                colliders_save = {key: torch.from_numpy(colliders_save[key])[0].to(x.device).to(x.dtype) for key in colliders_save}
-                
+                grippers_save = actions[0, step].clone()
+                grippers_save[:, :3] = grippers_save[:, :3] + grippers_save[:, 3:6] * cfg.sim.dt * cfg.sim.interval
+
                 loss_x = nn.functional.mse_loss(x[enabled_mask > 0], gt_x[:, step][enabled_mask > 0])
                 loss_v = nn.functional.mse_loss(v[enabled_mask > 0], gt_v[:, step][enabled_mask > 0])
                 losses[step] = dict(loss_x=loss_x.item(), loss_v=loss_v.item())
 
-                ckpt = dict(x=x[0], v=v[0], **colliders_save, **extra_save)
+                ckpt = dict(x=x[0], v=v[0], grippers=grippers_save, **extra_save)
 
                 if save and step % cfg.sim.skip_frame == 0:
                     torch.save(ckpt, episode_state_root / f'{int(step / cfg.sim.skip_frame):04d}.pt')
@@ -707,6 +706,8 @@ class Trainer:
         metrics_list = []
         start_episode = cfg.train.eval_start_episode
         end_episode = cfg.train.eval_end_episode if save else cfg.train.eval_start_episode + 2
+        if max(start_episode, cfg.train.training_start_episode) < min(end_episode, cfg.train.training_end_episode):
+            print('WARNING: eval episodes overlap with training episodes; metrics are not held-out.')
         for episode in range(start_episode, end_episode):
             metrics = self.eval_episode(eval_iteration, episode, save=save)
             metrics_list.append(metrics)

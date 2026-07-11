@@ -323,7 +323,7 @@ class RealTeleopBatchDataset(Dataset):
         frame = frame + self.n_history * self.skip_frame
 
         x = self.episode_xs[episode][frame]
-        v = self.episode_vs[episode][frame]  # velocity from step to step+1
+        v = self.episode_vs[episode][frame]
         enabled = self.episode_enabled[episode]
 
         # downsample
@@ -353,7 +353,17 @@ class RealTeleopBatchDataset(Dataset):
 
         end_frame = frame + self.num_steps * self.skip_frame + 1
 
-        actions = self.episode_grippers[episode][frame+self.skip_frame:end_frame:self.skip_frame]
+        grippers_end = self.episode_grippers[episode][frame+self.skip_frame:end_frame:self.skip_frame]
+        grippers_start = self.episode_grippers[episode][frame:end_frame-self.skip_frame:self.skip_frame][:grippers_end.shape[0]]
+        step_dt = self.dt * self.interval
+        actions = grippers_start.clone()
+        actions[:, :, 3:6] = (grippers_end[:, :, :3] - grippers_start[:, :, :3]) / step_dt
+
+        rot_start = kornia.geometry.conversions.quaternion_to_rotation_matrix(grippers_start[:, :, 6:10].reshape(-1, 4))
+        rot_end = kornia.geometry.conversions.quaternion_to_rotation_matrix(grippers_end[:, :, 6:10].reshape(-1, 4))
+        rot_delta = rot_start.bmm(rot_end.transpose(1, 2))  # same delta convention as preprocess and DynamicsModule.rollout
+        aa = kornia.geometry.conversions.rotation_matrix_to_axis_angle(rot_delta)
+        actions[:, :, 10:13] = aa.reshape(actions.shape[0], actions.shape[1], 3) / step_dt
 
         gt_xs = self.episode_xs[episode][frame+self.skip_frame:end_frame:self.skip_frame]
         gt_vs = self.episode_vs[episode][frame+self.skip_frame:end_frame:self.skip_frame]
