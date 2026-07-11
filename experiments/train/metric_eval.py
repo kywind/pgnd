@@ -84,7 +84,7 @@ def do_metric(
         source_frame_end = int(meta[2])
 
         skip_frame = cfg.train.dataset_load_skip_frame * cfg.train.dataset_skip_frame
-        frame_ids = np.arange(source_frame_start + (cfg.sim.n_history + 1) * skip_frame, source_frame_end, skip_frame)
+        frame_ids = np.arange(source_frame_start + (cfg.sim.n_history + 1) * skip_frame, source_frame_end, cfg.sim.skip_frame * skip_frame)
         n_frames = len(frame_ids)
 
         # load xyz_orig for inverse preprocess
@@ -97,8 +97,6 @@ def do_metric(
             masks = []
             gt_imgs = []
             gt_masks = []
-
-        data_init = torch.load(log_root / cfg.train.dataset_name / 'state' / episode / f'{0:04d}.pt')
 
         for frame_id in range(n_frames):
             frame_id_gt = frame_ids[frame_id]
@@ -140,7 +138,7 @@ def do_metric(
         
         traj = torch.stack(traj, dim=0)
         traj, xyz_orig = inverse_preprocess(cfg, traj, xyz_orig)
-        gt_traj = xyz_orig[(cfg.sim.n_history + 1) * skip_frame::skip_frame]
+        gt_traj = xyz_orig[(cfg.sim.n_history + 1) * skip_frame::cfg.sim.skip_frame * skip_frame]
 
         if use_gs:
             assert len(imgs) == len(gt_imgs) == len(gt_masks) == len(traj) == len(gt_traj)

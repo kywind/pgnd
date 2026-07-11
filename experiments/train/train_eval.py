@@ -547,13 +547,6 @@ class Trainer:
         enabled = enabled.to(self.torch_device)
         enabled_mask = enabled.unsqueeze(-1).repeat(1, 1, 3)  # (bsz, num_particles, 3)
 
-        colliders_save = colliders.export()
-        colliders_save = {key: torch.from_numpy(colliders_save[key])[0].to(x.device).to(x.dtype) for key in colliders_save}
-        ckpt = dict(x=x[0], v=v[0], **colliders_save)
-
-        if save:
-            torch.save(ckpt, episode_state_root / f'{0:04d}.pt')
-
         losses = {}
         with torch.no_grad():
             for step in trange(num_steps_total):
