@@ -1,5 +1,6 @@
 from pathlib import Path
 import argparse
+import json
 import os
 import random
 import numpy as np
@@ -78,8 +79,25 @@ class GSProcessor:
         self.device = device
 
         if episode_range is None:
-            n_episodes = len(glob.glob(str(self.data_dir / "episode*")))
-            episode_range = np.arange(n_episodes)
+            if 'merged' in name:
+                with open(self.data_dir / 'sub_episodes_v' / 'info.json') as f:
+                    info = json.load(f)
+                episode_range = []
+                for source_dir, episode_list in info.items():
+                    if source_dir in ['n_train', 'n_eval']:
+                        continue
+                    source_data_dir = root.parent / Path(source_dir).parent
+                    if not os.path.exists(source_data_dir):
+                        candidates = sorted(glob.glob(str(root / 'log' / '_data' / 'data_*' / Path(source_dir).parent.name)))
+                        assert len(candidates) == 1, f'source dataset not found: {source_data_dir}'
+                        source_data_dir = Path(candidates[0])
+                    eval_start, eval_end = episode_list[2], episode_list[3]
+                    for eval_episode in range(eval_start, eval_end):
+                        meta = np.loadtxt(source_data_dir / 'sub_episodes_v' / f'episode_{eval_episode:04d}' / 'meta.txt')
+                        episode_range.append((source_data_dir, int(meta[0]), int(meta[1]), int(meta[2])))
+            else:
+                n_episodes = len(glob.glob(str(self.data_dir / "episode*")))
+                episode_range = np.arange(n_episodes)
 
         self.episodes = episode_range
         self.cameras = np.arange(n_cameras)
@@ -93,22 +111,26 @@ class GSProcessor:
 
     def get_gaussian(self):
         for episode in self.episodes:
-            episode = int(episode)
-            data_dir = self.data_dir
-            episode_id = episode
-            start_frame = 0
+            if isinstance(episode, tuple):
+                # merged-dataset eval sub-episode: only the GS anchor frame is needed
+                data_dir, episode_id, sub_start, sub_end = episode
+                frame_ids = [sub_start + self.n_his_frames]
+            else:
+                episode_id = int(episode)
+                data_dir = self.data_dir
+                frame_ids = None
 
             episode_data_dir = data_dir / f"episode_{episode_id:04d}"
             os.makedirs(episode_data_dir / "gs", exist_ok=True)
             intrs, extrs = load_camera(episode_data_dir)
 
-            pcd_paths = sorted(glob.glob(str(episode_data_dir / "pcd_clean" / "*.npz")))
-            n_frames = min(len(pcd_paths), self.max_frames)
-            end_frame = n_frames
+            if frame_ids is None:
+                pcd_paths = sorted(glob.glob(str(episode_data_dir / "pcd_clean" / "*.npz")))
+                n_frames = min(len(pcd_paths), self.max_frames)
+                pivot_skip = 120
+                frame_ids = range(0, n_frames, pivot_skip)
 
-            pivot_skip = 120
-
-            for frame_id in range(start_frame, end_frame, pivot_skip):
+            for frame_id in frame_ids:
                 print(f'[get_gaussian] processing episode {episode_id}, frame {frame_id}')
                 
                 if os.path.exists(os.path.join(episode_data_dir / 'gs' / f'{frame_id:06d}.splat')):
@@ -203,7 +225,9 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--task', type=str, default='1018_sloth_processed')
-    parser.add_argument('--n_his_frames', type=int, default=6)
+    parser.add_argument('--n_his_frames', type=int, default=6,
+                        help='GS anchor frame offset within each eval sub-episode; must equal '
+                             'sim.n_history * train.dataset_load_skip_frame * train.dataset_skip_frame')
     parser.add_argument('--n_cameras', type=int, default=4)
     parser.add_argument('--device', type=int, default=0)
     args = parser.parse_args()

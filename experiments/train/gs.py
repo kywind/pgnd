@@ -393,7 +393,7 @@ def render(
         datadir = datadir_list[episode_real_name]
         source_data_dir = datadir['path']
         source_episode_id = int(meta[0])
-        source_frame_start = int(meta[1]) + (int(cfg.sim.n_history) + 1) * int(cfg.train.dataset_load_skip_frame) * int(cfg.train.dataset_skip_frame)
+        source_frame_start = int(meta[1]) + int(cfg.sim.n_history) * int(cfg.train.dataset_load_skip_frame) * int(cfg.train.dataset_skip_frame)
         source_frame_end = int(meta[2])
         episode_gs_init_path = (log_root.parent.parent / source_data_dir).parent / f'episode_{source_episode_id:04d}' / 'gs' / f'{source_frame_start:06d}.splat'
 

@@ -75,7 +75,7 @@ def render(
         if start_step is not None and end_step is not None:
             ckpt_paths = ckpt_paths[start_step:end_step]
         skip_frame = cfg.train.dataset_skip_frame * cfg.train.dataset_load_skip_frame
-        ckpt_paths = ckpt_paths[(cfg.sim.n_history + 1) * skip_frame::cfg.sim.skip_frame * skip_frame]
+        ckpt_paths = ckpt_paths[cfg.sim.n_history * skip_frame::cfg.sim.skip_frame * skip_frame]
         for i, path in enumerate(tqdm(ckpt_paths, desc=render_type)):
 
             if i % cfg.render.skip_frame != 0:

@@ -88,7 +88,7 @@ def eval(
     datadir = datadir_list[episode]
     source_data_dir = datadir['path']
     source_episode_id = int(meta[0])
-    source_frame_start = int(meta[1]) + (int(cfg.sim.n_history) + 1) * int(cfg.train.dataset_load_skip_frame) * int(cfg.train.dataset_skip_frame)
+    source_frame_start = int(meta[1]) + int(cfg.sim.n_history) * int(cfg.train.dataset_load_skip_frame) * int(cfg.train.dataset_skip_frame)
     source_frame_end = int(meta[2])
     if use_gs:
         use_gs = os.path.exists((log_root.parent.parent / source_data_dir).parent / f'episode_{source_episode_id:04d}' / 'gs' / f'{source_frame_start:06d}.splat')
@@ -191,6 +191,10 @@ def eval(
         assert len(actions.shape) > 2
         colliders.initialize_grippers(actions[:, 0])
 
+    colliders_save = colliders.export()
+    colliders_save = {key: torch.from_numpy(colliders_save[key])[0].to(x.device).to(x.dtype) for key in colliders_save}
+    torch.save(dict(x=x[0], v=v[0], **colliders_save), episode_state_root / f'{0:04d}.pt')
+
     enabled = enabled.to(torch_device)  # (bsz, num_particles)
     enabled_mask = enabled.unsqueeze(-1).repeat(1, 1, 3)  # (bsz, num_particles, 3)
 
@@ -281,7 +285,7 @@ def eval(
             ckpt = dict(x=x[0], v=v[0], grippers=grippers_save, **extra_save)
 
             if step % cfg.sim.skip_frame == 0:
-                torch.save(ckpt, episode_state_root / f'{int(step / cfg.sim.skip_frame):04d}.pt')
+                torch.save(ckpt, episode_state_root / f'{int(step / cfg.sim.skip_frame) + 1:04d}.pt')
 
     for loss_k in losses[0].keys():
         plt.figure(figsize=(10, 5))
