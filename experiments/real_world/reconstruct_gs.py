@@ -87,10 +87,7 @@ class GSProcessor:
                     if source_dir in ['n_train', 'n_eval']:
                         continue
                     source_data_dir = root.parent / Path(source_dir).parent
-                    if not os.path.exists(source_data_dir):
-                        candidates = sorted(glob.glob(str(root / 'log' / '_data' / 'data_*' / Path(source_dir).parent.name)))
-                        assert len(candidates) == 1, f'source dataset not found: {source_data_dir}'
-                        source_data_dir = Path(candidates[0])
+                    assert os.path.exists(source_data_dir), f'source dataset not found: {source_data_dir}'
                     eval_start, eval_end = episode_list[2], episode_list[3]
                     for eval_episode in range(eval_start, eval_end):
                         meta = np.loadtxt(source_data_dir / 'sub_episodes_v' / f'episode_{eval_episode:04d}' / 'meta.txt')
