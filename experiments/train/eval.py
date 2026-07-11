@@ -191,9 +191,11 @@ def eval(
         assert len(actions.shape) > 2
         colliders.initialize_grippers(actions[:, 0])
 
-    colliders_save = colliders.export()
-    colliders_save = {key: torch.from_numpy(colliders_save[key])[0].to(x.device).to(x.dtype) for key in colliders_save}
-    torch.save(dict(x=x[0], v=v[0], **colliders_save), episode_state_root / f'{0:04d}.pt')
+    ckpt_init = dict(x=x[0], v=v[0], grippers=actions[0, 0].clone())
+    if cfg.sim.gripper_points:
+        ckpt_init['gripper_x'] = gripper_x[0, 0]
+        ckpt_init['gripper_v'] = gripper_v[0, 0]
+    torch.save(ckpt_init, episode_state_root / f'{0:04d}.pt')
 
     enabled = enabled.to(torch_device)  # (bsz, num_particles)
     enabled_mask = enabled.unsqueeze(-1).repeat(1, 1, 3)  # (bsz, num_particles, 3)
@@ -284,8 +286,8 @@ def eval(
 
             ckpt = dict(x=x[0], v=v[0], grippers=grippers_save, **extra_save)
 
-            if step % cfg.sim.skip_frame == 0:
-                torch.save(ckpt, episode_state_root / f'{int(step / cfg.sim.skip_frame) + 1:04d}.pt')
+            if (step + 1) % cfg.sim.skip_frame == 0:
+                torch.save(ckpt, episode_state_root / f'{int((step + 1) / cfg.sim.skip_frame):04d}.pt')
 
     for loss_k in losses[0].keys():
         plt.figure(figsize=(10, 5))
