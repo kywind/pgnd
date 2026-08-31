@@ -482,7 +482,7 @@ class PostProcessor:
                                 cv2.imwrite(save_dir_mask_pivot / f"annotated_frame_{(frame_idx + ann_frame):06d}.jpg", annotated_frame)
 
 
-    def get_tracking(self):
+    def get_tracking(self, target_frames=None):
         save_dir = self.data_dir / f"cotracker_vis"
         os.makedirs(save_dir, exist_ok=True)
 
@@ -510,7 +510,12 @@ class PostProcessor:
                 save_dir_speed_cam = save_dir / "pred_speed" / f"episode_{episode_id:04d}_camera_{cam}"
                 os.makedirs(save_dir_speed_cam, exist_ok=True)
 
-                for pivot_frame in range(start_frame, n_frames, pivot_skip):  # determine the speed for frame (pivot_frame, pivot_frame + pivot_skip)
+                if target_frames is None:
+                    pivot_frames = range(start_frame, n_frames, pivot_skip)
+                else:  # only the pivot windows covering the requested frames; each window is independent
+                    pivot_frames = sorted({(f // pivot_skip) * pivot_skip for f in target_frames if f < n_frames})
+
+                for pivot_frame in pivot_frames:  # determine the speed for frame (pivot_frame, pivot_frame + pivot_skip)
                     print(f"[get_tracking] Processing episode {episode_id} camera {cam} pivot frame {pivot_frame}")
                     mask_pivot = cv2.imread(mask_paths[pivot_frame], cv2.IMREAD_UNCHANGED)
                     img = cv2.imread(rgb_paths[pivot_frame])  # bgr
@@ -716,7 +721,7 @@ class PostProcessor:
                         cv2.imwrite(episode_data_dir_cam / "depth_mask" / f"{target_frame:06d}.png", depth_mask_vis * 255)
 
 
-    def get_pcd(self):
+    def get_pcd(self, frame_ids=None):
         for episode_id in self.episodes:
             episode_data_dir = self.data_dir / f"episode_{episode_id:04d}"
             os.makedirs(episode_data_dir / "pcd_clean", exist_ok=True)
@@ -730,7 +735,7 @@ class PostProcessor:
             depth_mask_paths = sorted(glob.glob(str(episode_data_dir_cam_0 / "depth_mask" / '*.png')))
             n_frames = min(len(rgb_paths), self.max_frames) - 5  # skip the last 5 frames
 
-            for frame_id in range(n_frames):
+            for frame_id in (range(n_frames) if frame_ids is None else frame_ids):
 
                 print(f"[get_pcd] Processing episode {episode_id} frame {frame_id}")
                 pts_list = []
@@ -739,10 +744,12 @@ class PostProcessor:
                 camera_indices_list = []
 
                 for cam in self.cameras:
-                    rgb_path = rgb_paths[frame_id].replace(f"camera_{self.cameras[0]}", f"camera_{cam}")
-                    mask_path = depth_mask_paths[frame_id].replace(f"camera_{self.cameras[0]}", f"camera_{cam}")
-                    depth_path = depth_paths[frame_id].replace(f"camera_{self.cameras[0]}", f"camera_{cam}")
-                    vel_path = vel_paths[frame_id].replace(f"camera_{self.cameras[0]}", f"camera_{cam}")
+                    # explicit filenames: vel/depth_mask may be sparse when built via target_frames
+                    episode_data_dir_cam = self.data_dir / f"episode_{episode_id:04d}" / f"camera_{cam}"
+                    rgb_path = str(episode_data_dir_cam / 'rgb' / f'{frame_id:06d}.jpg')
+                    mask_path = str(episode_data_dir_cam / 'depth_mask' / f'{frame_id:06d}.png')
+                    depth_path = str(episode_data_dir_cam / 'depth' / f'{frame_id:06d}.png')
+                    vel_path = str(episode_data_dir_cam / 'vel' / f'{frame_id:06d}.npz')
 
                     mask = cv2.imread(mask_path, cv2.IMREAD_UNCHANGED)
                     img = cv2.imread(rgb_path)
