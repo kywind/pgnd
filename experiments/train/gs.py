@@ -74,7 +74,7 @@ class GSRenderer:
             'logit_opacities': torch.logit(torch.from_numpy(opacities).to(self.device))
         }
 
-        gripper_splat = root / 'log/gs/ckpts/gripper.splat'  # gripper_new.splat
+        gripper_splat = root / 'log/gs/ckpts/gripper.splat'
         table_splat = root / 'log/gs/ckpts/table.splat'
 
         self.gripper_params = read_splat(gripper_splat)
