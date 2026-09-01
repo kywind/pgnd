@@ -29,7 +29,7 @@ from gs import do_gs
 from pv_train import do_train_pv
 from pv_dataset import do_dataset_pv
 from metric_eval import do_metric
-from train_eval import transform_gripper_points, dataloader_wrapper
+from train_eval import advance_grippers, transform_gripper_points, dataloader_wrapper
 
 root: Path = get_root(__file__)
 
@@ -151,10 +151,14 @@ def eval(
 
     actions = actions.to(torch_device)
 
+    step_dt = cfg.sim.dt * cfg.sim.interval
+    grippers_end = advance_grippers(actions, step_dt)
+
     if cfg.sim.gripper_points:
         gripper_points, _ = next(eval_gripper_dataloader)
         gripper_points = gripper_points.to(torch_device)
         gripper_x, gripper_v, gripper_mask = transform_gripper_points(cfg, gripper_points, actions)  # (bsz, num_steps, num_grippers, 3)
+        gripper_x_end, gripper_v_end, _ = transform_gripper_points(cfg, gripper_points, grippers_end)
 
     gt_x, gt_v = gt_states
     gt_x = gt_x.to(torch_device)
@@ -268,8 +272,8 @@ def eval(
 
             if cfg.sim.gripper_points:
                 extra_save = {
-                    'gripper_x': gripper_x[0, step],
-                    'gripper_v': gripper_v[0, step],
+                    'gripper_x': gripper_x_end[0, step],
+                    'gripper_v': gripper_v_end[0, step],
                 }
                 x = x[:, :num_particles_orig]
                 v = v[:, :num_particles_orig]
@@ -277,8 +281,7 @@ def eval(
             else:
                 extra_save = {}
 
-            grippers_save = actions[0, step].clone()
-            grippers_save[:, :3] = grippers_save[:, :3] + grippers_save[:, 3:6] * cfg.sim.dt * cfg.sim.interval
+            grippers_save = grippers_end[0, step]
 
             loss_x = nn.functional.mse_loss(x[enabled_mask > 0], gt_x[:, step][enabled_mask > 0])
             loss_v = nn.functional.mse_loss(v[enabled_mask > 0], gt_v[:, step][enabled_mask > 0])

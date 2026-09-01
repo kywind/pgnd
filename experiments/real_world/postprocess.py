@@ -483,6 +483,9 @@ class PostProcessor:
 
 
     def get_tracking(self, target_frames=None):
+        if target_frames is not None:
+            target_frames = tuple(target_frames)
+
         save_dir = self.data_dir / f"cotracker_vis"
         os.makedirs(save_dir, exist_ok=True)
 
@@ -506,14 +509,19 @@ class PostProcessor:
                 n_frames = min(len(rgb_paths), self.max_frames)
                 pivot_skip = 5
                 seq_len = 15
+                gap = 5
 
                 save_dir_speed_cam = save_dir / "pred_speed" / f"episode_{episode_id:04d}_camera_{cam}"
                 os.makedirs(save_dir_speed_cam, exist_ok=True)
 
                 if target_frames is None:
-                    pivot_frames = range(start_frame, n_frames, pivot_skip)
+                    pivot_frames = range(start_frame, n_frames - gap, pivot_skip)
                 else:  # only the pivot windows covering the requested frames; each window is independent
-                    pivot_frames = sorted({(f // pivot_skip) * pivot_skip for f in target_frames if f < n_frames})
+                    pivot_frames = sorted({
+                        (f // pivot_skip) * pivot_skip
+                        for f in target_frames
+                        if start_frame <= f < n_frames - gap
+                    })
 
                 for pivot_frame in pivot_frames:  # determine the speed for frame (pivot_frame, pivot_frame + pivot_skip)
                     print(f"[get_tracking] Processing episode {episode_id} camera {cam} pivot frame {pivot_frame}")
@@ -597,7 +605,6 @@ class PostProcessor:
                     pred_tracks = pred_tracks[:, :, ::-1].copy()
                     
                     # calculate point speed in 3D
-                    gap = 5
                     for target_frame in range(pivot_frame, min(pivot_frame + pivot_skip, n_frames - gap)):
                         depth_now = cv2.imread(depth_paths[target_frame], cv2.IMREAD_UNCHANGED) / 1000.0
                         try:
@@ -722,6 +729,9 @@ class PostProcessor:
 
 
     def get_pcd(self, frame_ids=None):
+        if frame_ids is not None:
+            frame_ids = tuple(frame_ids)
+
         for episode_id in self.episodes:
             episode_data_dir = self.data_dir / f"episode_{episode_id:04d}"
             os.makedirs(episode_data_dir / "pcd_clean", exist_ok=True)
@@ -735,7 +745,10 @@ class PostProcessor:
             depth_mask_paths = sorted(glob.glob(str(episode_data_dir_cam_0 / "depth_mask" / '*.png')))
             n_frames = min(len(rgb_paths), self.max_frames) - 5  # skip the last 5 frames
 
-            for frame_id in (range(n_frames) if frame_ids is None else frame_ids):
+            selected_frame_ids = range(n_frames) if frame_ids is None else (
+                frame_id for frame_id in frame_ids if 0 <= frame_id < n_frames
+            )
+            for frame_id in selected_frame_ids:
 
                 print(f"[get_pcd] Processing episode {episode_id} frame {frame_id}")
                 pts_list = []
