@@ -355,6 +355,7 @@ def main(
 
     print(OmegaConf.to_yaml(cfg, resolve=True))
 
+    eval_base_name = 'eval'
     metrics_list = []
     for episode in range(cfg.start_episode, cfg.end_episode):
         if "eval_state_only" in cfg and cfg.eval_state_only:
@@ -367,7 +368,7 @@ def main(
             None,
             episode,
             dataset_pv=True,
-            eval_base_name='eval',
+            eval_base_name=eval_base_name,
             use_pv=use_pv, 
             use_gs=use_gs,
         )
