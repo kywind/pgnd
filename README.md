@@ -71,9 +71,24 @@ pip install --no-build-isolation -e .
 ```
 
 ## Data and Checkpoints
-The dataset and pre-trained checkpoint files could be downloaded from [this link](https://drive.google.com/drive/folders/1JfZ7NBdkZm8T0WSse0cwY2GhflMd0eHV). 
+The dataset is available from [Hugging Face](https://huggingface.co/datasets/kaifz/pgnd-dataset).
+Pre-trained checkpoint files can be downloaded from [Google Drive](https://drive.google.com/drive/folders/1JfZ7NBdkZm8T0WSse0cwY2GhflMd0eHV).
 
-For the dataset, We provide the full training and evaluation datasets for all six categories. The dataset is stored as a zip file for each category, e.g. for box, all the data are stored in data_box.zip. The files should be unzipped and organized as the following (take box and sloth as examples; suppose the data for these two categories are downloaded):
+We provide the full training and evaluation datasets for all six categories.
+Each category can be downloaded independently. The repository's download
+helper verifies the archive checksums and extracts the selected category and
+shared Gaussian assets directly into the paths expected by this codebase:
+
+```bash
+hf download kaifz/pgnd-dataset download_category.py \
+  --repo-type dataset \
+  --local-dir .
+python download_category.py box --output .
+```
+
+Run the last command once for each desired category (`box`, `bread`, `cloth`,
+`paperbag`, `rope`, or `sloth`). The resulting layout is:
+
 ```
 - experiments/log/data
   - 0112_box_processed
@@ -101,9 +116,9 @@ For the checkpoints, the files should be unzipped and organized as the following
 ```
 The path needs to match exactly for training and inference scripts to work. If you need to use data in a different format, you may need to directly modify the code to accomodate.
 
-Additional asset files for Gaussian Splatting rendering (```gripper.splat``` and ```table.splat```) and gripper point sampling (```gripper_new.splat```) are available [here](https://drive.google.com/drive/u/1/folders/1g_7WI3PCvviJkN5quqIzTvvhznT0OtKf). 
-
-Download and put them in the ```experimentlog/gs/ckpts``` folder: 
+The Hugging Face release includes the additional Gaussian Splatting rendering
+assets (`gripper.splat` and `table.splat`) and the gripper point-sampling asset
+(`gripper_new.splat`). The download helper installs them at:
 
 ```
 - experiments/log/gs/ckpts
