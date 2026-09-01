@@ -21,6 +21,8 @@
 <img src="imgs/teaser.png" width="100%"/>
 
 ## Updates
+- **[2026/08/31]** Published the versioned PGND dataset on Hugging Face with independent category downloads and checksum verification.
+
 - **[2026/01/05]** Minor updates to the training and evaluation scripts; fixed bugs, cleaned the dataset, updated dataset links, and revised the installation guide.
 
 - **[2025/07/07]** Updated the custom dataset processing pipeline.
@@ -71,7 +73,7 @@ pip install --no-build-isolation -e .
 ```
 
 ## Data and Checkpoints
-The dataset is available from [Hugging Face](https://huggingface.co/datasets/kaifz/pgnd-dataset).
+The versioned dataset is available from [Hugging Face](https://huggingface.co/datasets/kaifz/pgnd-dataset/tree/release-20260831).
 Pre-trained checkpoint files can be downloaded from [Google Drive](https://drive.google.com/drive/folders/1JfZ7NBdkZm8T0WSse0cwY2GhflMd0eHV).
 
 We provide the full training and evaluation datasets for all six categories.
@@ -80,10 +82,9 @@ helper verifies the archive checksums and extracts the selected category and
 shared Gaussian assets directly into the paths expected by this codebase:
 
 ```bash
-hf download kaifz/pgnd-dataset download_category.py \
-  --repo-type dataset \
-  --local-dir .
-python download_category.py box --output .
+python experiments/scripts/download_category.py box \
+  --revision release-20260831 \
+  --output .
 ```
 
 Run the last command once for each desired category (`box`, `bread`, `cloth`,

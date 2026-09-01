@@ -424,12 +424,12 @@ def main(
 if __name__ == '__main__':
 
     best_models = {
-        'cloth': ['cloth', 'train', 100000, [610, 650]],
-        'rope': ['rope', 'train', 100000, [651, 691]],
-        'paperbag': ['paperbag', 'train', 100000, [200, 220]],
-        'sloth': ['sloth', 'train', 100000, [113, 133]],
-        'box': ['box', 'train', 100000, [306, 323]],
-        'bread': ['bread', 'train', 100000, [143, 163]],
+        'cloth': ['cloth', 'train', 100000],
+        'rope': ['rope', 'train', 100000],
+        'paperbag': ['paperbag', 'train', 100000],
+        'sloth': ['sloth', 'train', 100000],
+        'box': ['box', 'train', 100000],
+        'bread': ['bread', 'train', 100000],
     }
 
     arg_parser = argparse.ArgumentParser()
@@ -442,8 +442,8 @@ if __name__ == '__main__':
     cfg = OmegaConf.create(config)
 
     cfg.iteration = best_models[args.task][2]
-    cfg.start_episode = best_models[args.task][3][0]
-    cfg.end_episode = best_models[args.task][3][1]
+    cfg.start_episode = cfg.train.eval_start_episode
+    cfg.end_episode = cfg.train.eval_end_episode
     cfg.sim.num_steps = 1000
     cfg.sim.gripper_forcing = False
     cfg.sim.uniform = True

@@ -4,6 +4,7 @@ pyyaml
 numpy==1.26.4
 scipy
 transformers
+huggingface_hub
 scikit-learn
 scikit-image
 pyvista
