@@ -73,8 +73,9 @@ pip install --no-build-isolation -e .
 ```
 
 ## Data and Checkpoints
-The versioned dataset is available from [Hugging Face](https://huggingface.co/datasets/kaifz/pgnd-dataset/tree/release-20260831).
-Pre-trained checkpoint files can be downloaded from [Google Drive](https://drive.google.com/drive/folders/1JfZ7NBdkZm8T0WSse0cwY2GhflMd0eHV).
+The versioned [dataset](https://huggingface.co/datasets/kaifz/pgnd-dataset/tree/release-20260831)
+and [pretrained checkpoints](https://huggingface.co/kaifz/pgnd-checkpoints/tree/release-20260831)
+are available from Hugging Face.
 
 We provide the full training and evaluation datasets for all six categories.
 Each category can be downloaded independently. The repository's download
@@ -100,17 +101,30 @@ Run the last command once for each desired category (`box`, `bread`, `cloth`,
   - sloth_merged
   ...
 ```
-For the checkpoints, the files should be unzipped and organized as the following:
+
+Download the corresponding final checkpoint and configuration directly into
+the same project layout:
+
+```bash
+hf download kaifz/pgnd-checkpoints \
+  --revision release-20260831 \
+  --include "experiments/log/box/**" \
+  --include "SHA256SUMS" \
+  --local-dir .
+sha256sum --check --ignore-missing SHA256SUMS
+```
+
+For the checkpoints, the files are organized as follows:
 ```
 - experiments/log
   - box
     - train
-      - ckpts
+      - ckpt
         - 100000.pt
       - hydra.yaml
   - sloth
     - train
-      - ckpts
+      - ckpt
         - 100000.pt
       - hydra.yaml
   ...
